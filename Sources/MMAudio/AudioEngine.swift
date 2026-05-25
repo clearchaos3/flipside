@@ -472,6 +472,31 @@ public final class AudioEngine: @unchecked Sendable {
 
     public func stopPreview() { previewPlayer.stop() }
 
+    // MARK: - Master output recording (bounce)
+
+    private var recordFile: AVAudioFile?
+    public private(set) var isRecordingOutput = false
+
+    /// Start capturing the full master output (post-FX/compressor/lo-fi) to
+    /// a WAV via a tap on the main mixer.
+    public func startOutputRecording(to url: URL) throws {
+        let fmt = engine.mainMixerNode.outputFormat(forBus: 0)
+        let file = try AVAudioFile(forWriting: url, settings: fmt.settings)
+        recordFile = file
+        engine.mainMixerNode.installTap(onBus: 0, bufferSize: 4096, format: fmt) { [weak self] buffer, _ in
+            guard let self, let f = self.recordFile else { return }
+            try? f.write(from: buffer)
+        }
+        isRecordingOutput = true
+    }
+
+    public func stopOutputRecording() {
+        guard isRecordingOutput else { return }
+        engine.mainMixerNode.removeTap(onBus: 0)
+        recordFile = nil
+        isRecordingOutput = false
+    }
+
     // MARK: - Knob FX (master bus)
 
     /// Select the active Knob FX and apply its three normalised knob values.

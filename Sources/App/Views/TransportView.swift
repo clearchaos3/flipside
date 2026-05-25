@@ -116,6 +116,22 @@ struct TransportView: View {
             }
 
             Spacer()
+
+            // Bounce master output to WAV
+            field(label: "Bounce") {
+                Button {
+                    state.toggleBounce()
+                } label: {
+                    Label(state.isBouncing ? "Stop" : "Bounce",
+                          systemImage: state.isBouncing ? "stop.circle.fill" : "square.and.arrow.down")
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(state.isBouncing ? Color.white : Color.white.opacity(0.85))
+                }
+                .controlSize(.large)
+                .tint(state.isBouncing ? .red : nil)
+                .buttonStyle(.borderedProminent)
+                .help("Record the master output to a WAV in ~/Music/mac-mpc/bounces")
+            }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

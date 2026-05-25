@@ -277,6 +277,39 @@ final class AppState {
 
     func applyLoFi() { audio.setLoFi(project.lofi) }
 
+    // MARK: - Bounce (master output → WAV)
+
+    var isBouncing: Bool = false
+    private(set) var lastBounceURL: URL?
+
+    /// Toggle master-output recording. Auto-names into ~/Music/mac-mpc/bounces.
+    func toggleBounce() {
+        if isBouncing {
+            audio.stopOutputRecording()
+            isBouncing = false
+            if let url = lastBounceURL {
+                lastEvent = "Bounced → \(url.lastPathComponent)"
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            }
+        } else {
+            let dir = FileManager.default.homeDirectoryForCurrentUser
+                .appendingPathComponent("Music/mac-mpc/bounces", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let stamp = ISO8601DateFormatter().string(from: Date())
+                .replacingOccurrences(of: ":", with: "-")
+            let name = "\((project.name.isEmpty ? "Untitled" : project.name))-\(stamp).wav"
+            let url = dir.appendingPathComponent(name)
+            do {
+                try audio.startOutputRecording(to: url)
+                lastBounceURL = url
+                isBouncing = true
+                lastEvent = "Bouncing → \(name)"
+            } catch {
+                lastEvent = "Bounce failed: \(error.localizedDescription)"
+            }
+        }
+    }
+
     var lofiBinding: LoFiSettings {
         get { project.lofi }
         set {
