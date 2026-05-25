@@ -10,6 +10,7 @@ struct ContentView: View {
             header
             DisplayPanelView()
             TransportView()
+            padPlay
             PadGridView()
             controls
             statusBar
@@ -33,6 +34,35 @@ struct ContentView: View {
             LoFiView()
                 .environment(state)
         }
+    }
+
+    private var padPlay: some View {
+        let pad = state.project.pads[state.selectedPad]
+        return HStack(spacing: 10) {
+            Text("PAD PLAY")
+                .font(.system(.caption2, design: .monospaced, weight: .heavy))
+                .foregroundStyle(.white.opacity(0.4))
+            padPlayToggle("Loop", system: "repeat", on: pad?.loop ?? false) { state.toggleLoop() }
+            padPlayToggle("Reverse", system: "arrow.uturn.backward", on: pad?.reverse ?? false) { state.toggleReverse() }
+            padPlayToggle("Note On", system: "hand.point.up.left", on: pad?.noteOn ?? false) { state.toggleNoteOn() }
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(Color(white: 0.12), in: .rect(cornerRadius: 10))
+    }
+
+    private func padPlayToggle(_ label: String, system: String, on: Bool, _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(label, systemImage: system)
+                .font(.system(.caption, design: .monospaced, weight: on ? .bold : .regular))
+                .foregroundStyle(on ? Color.black : Color.white.opacity(0.8))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(on ? Color.cyan : Color.white.opacity(0.08), in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .disabled(state.project.pads[state.selectedPad]?.sampleURL == nil)
     }
 
     private var header: some View {

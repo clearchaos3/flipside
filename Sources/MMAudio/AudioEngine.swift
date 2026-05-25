@@ -71,6 +71,8 @@ public final class AudioEngine: @unchecked Sendable {
     /// Buffer actually scheduled on trigger (sliced/reversed per params).
     private var padPlayable: [PadAddress: AVAudioPCMBuffer] = [:]
     private var padParams: [PadAddress: TriggerParams] = [:]
+    /// Pads currently sustaining a loop (loop pads use tap-to-start/tap-to-stop).
+    private var loopingPads: Set<PadAddress> = []
     /// When false, triggerPad no-ops — used to suppress sample playback while
     /// Pad FX mode repurposes the pads as effect triggers.
     private var playbackEnabled = true
@@ -387,6 +389,12 @@ public final class AudioEngine: @unchecked Sendable {
     }
 
     /// Trigger a pad. Safe from any thread (including the CoreMIDI thread).
+    ///
+    /// Playback mode follows the pad's params:
+    ///   - loop + !noteOn → tap toggles the loop on/off
+    ///   - loop + noteOn  → loops while held (release via stopPad)
+    ///   - noteOn (no loop) → one-shot, gated (release via stopPad)
+    ///   - otherwise → one-shot
     public func triggerPad(_ pad: PadAddress, velocity: UInt8) {
         lock.lock()
         guard playbackEnabled,
@@ -396,22 +404,35 @@ public final class AudioEngine: @unchecked Sendable {
             return
         }
         let params = padParams[pad] ?? TriggerParams()
+
+        // Loop pads that aren't gated toggle on repeated taps.
+        if params.loop && !params.noteOn && loopingPads.contains(pad) {
+            loopingPads.remove(pad)
+            lock.unlock()
+            player.stop()
+            return
+        }
+        if params.loop { loopingPads.insert(pad) }
         lock.unlock()
 
         let vel = max(0, min(1, Float(velocity) / 127.0))
         player.volume = params.gain * vel
         player.pan = max(-1, min(1, params.pan))
-        player.scheduleBuffer(playable, at: nil, options: [.interrupts], completionHandler: nil)
+        let options: AVAudioPlayerNodeBufferOptions = params.loop ? [.interrupts, .loops] : [.interrupts]
+        player.scheduleBuffer(playable, at: nil, options: options, completionHandler: nil)
         if !player.isPlaying { player.play() }
     }
 
     public func stopPad(_ pad: PadAddress) {
-        lock.lock(); let player = padPlayers[pad]; lock.unlock()
+        lock.lock()
+        let player = padPlayers[pad]
+        loopingPads.remove(pad)
+        lock.unlock()
         player?.stop()
     }
 
     public func stopAll() {
-        lock.lock(); let players = Array(padPlayers.values); lock.unlock()
+        lock.lock(); let players = Array(padPlayers.values); loopingPads.removeAll(); lock.unlock()
         for p in players { p.stop() }
         previewPlayer.stop()
     }

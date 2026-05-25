@@ -251,6 +251,23 @@ final class AppState {
         sequencer.recordHit(bank: pad.bank, pad: pad.pad, velocity: velocity)
     }
 
+    // MARK: - Pad Play toggles (act on the selected pad)
+
+    func toggleLoop() {
+        project.pads[selectedPad]?.loop.toggle()
+        syncPadToEngine(selectedPad)
+    }
+
+    func toggleReverse() {
+        project.pads[selectedPad]?.reverse.toggle()
+        syncPadToEngine(selectedPad)
+    }
+
+    func toggleNoteOn() {
+        project.pads[selectedPad]?.noteOn.toggle()
+        syncPadToEngine(selectedPad)
+    }
+
     func openBrowser() {
         browser.refresh()
         isBrowserOpen = true
@@ -541,6 +558,8 @@ final class AppState {
         params.filter = filterSpec(type: p.filterType, cutoff: p.filterCutoff, resonance: p.filterResonance)
         params.ampAttack = p.ampAttack
         params.ampDecay = p.ampDecayOrRelease
+        params.loop = p.loop
+        params.noteOn = p.noteOn
         audio.setTriggerParams(params, for: pad)
     }
 
@@ -797,6 +816,9 @@ final class AppState {
             lastEvent = "MF64 press \(coord) vel \(vel)"
         case .padReleased(let coord, _):
             pressedCoords.remove(coord)
+            let addr = PadMapping.address(for: coord)
+            // Note-On pads gate: stop the voice when the pad is released.
+            if project.pads[addr]?.noteOn == true { audio.stopPad(addr) }
             lastEvent = "MF64 release \(coord)"
         case .unknownNote(let note, let vel):
             lastEvent = "MF64 unknown note \(note) vel \(vel)"
