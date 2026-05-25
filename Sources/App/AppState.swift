@@ -342,6 +342,12 @@ final class AppState {
         syncPadToEngine(selectedPad)
     }
 
+    func toggleMute() {
+        project.pads[selectedPad]?.muted.toggle()
+        syncPadToEngine(selectedPad)
+        refreshMF64LEDs()
+    }
+
     func openBrowser() {
         browser.refresh()
         isBrowserOpen = true
@@ -634,6 +640,7 @@ final class AppState {
         params.ampDecay = p.ampDecayOrRelease
         params.loop = p.loop
         params.noteOn = p.noteOn
+        params.muted = p.muted
         audio.setTriggerParams(params, for: pad)
     }
 

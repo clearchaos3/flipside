@@ -49,6 +49,7 @@ struct ContentView: View {
             padPlayToggle("Loop", system: "repeat", on: pad?.loop ?? false) { state.toggleLoop() }
             padPlayToggle("Reverse", system: "arrow.uturn.backward", on: pad?.reverse ?? false) { state.toggleReverse() }
             padPlayToggle("Note On", system: "hand.point.up.left", on: pad?.noteOn ?? false) { state.toggleNoteOn() }
+            padPlayToggle("Mute", system: "speaker.slash", on: pad?.muted ?? false) { state.toggleMute() }
             Spacer()
         }
         .padding(.horizontal, 14)

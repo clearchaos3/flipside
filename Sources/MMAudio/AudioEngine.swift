@@ -26,6 +26,8 @@ public struct TriggerParams: Sendable, Equatable {
     public var loop: Bool = false
     /// Note-On (gate): sample plays only while the pad is held.
     public var noteOn: Bool = false
+    /// Muted: the pad produces no sound when triggered.
+    public var muted: Bool = false
 
     public init() {}
 }
@@ -404,6 +406,9 @@ public final class AudioEngine: @unchecked Sendable {
             return
         }
         let params = padParams[pad] ?? TriggerParams()
+
+        // Muted pads produce no sound.
+        if params.muted { lock.unlock(); return }
 
         // Loop pads that aren't gated toggle on repeated taps.
         if params.loop && !params.noteOn && loopingPads.contains(pad) {
