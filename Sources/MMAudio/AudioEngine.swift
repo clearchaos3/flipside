@@ -22,6 +22,10 @@ public struct TriggerParams: Sendable, Equatable {
     /// shorter fade-out). Baked into the playable buffer.
     public var ampAttack: Double = 0
     public var ampDecay: Double = 1
+    /// Loop playback: the sample repeats when triggered.
+    public var loop: Bool = false
+    /// Note-On (gate): sample plays only while the pad is held.
+    public var noteOn: Bool = false
 
     public init() {}
 }

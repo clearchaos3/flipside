@@ -24,7 +24,7 @@ public enum SampleLoader {
             pcmFormat: format,
             frameCapacity: AVAudioFrameCount(file.length)
         ) else {
-            throw NSError(domain: "mac-mpc.SampleLoader", code: -1,
+            throw NSError(domain: "flipside.SampleLoader", code: -1,
                           userInfo: [NSLocalizedDescriptionKey: "Could not allocate PCM buffer"])
         }
         try file.read(into: buffer)

@@ -14,7 +14,7 @@ public final class KorgNanoKontrol: @unchecked Sendable {
     public struct Config: Sendable {
         public var deviceNameContains: String = "nanoKONTROL"
         public var excludeNameContains: String = "nanoKONTROL2"
-        public var clientName: String = "mac-mpc.nano"
+        public var clientName: String = "flipside.nano"
         public var inputPortName: String = "NanoInput"
         public var pollIntervalSeconds: TimeInterval = 1.0
         public init() {}

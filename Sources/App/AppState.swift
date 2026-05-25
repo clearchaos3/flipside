@@ -282,7 +282,7 @@ final class AppState {
     var isBouncing: Bool = false
     private(set) var lastBounceURL: URL?
 
-    /// Toggle master-output recording. Auto-names into ~/Music/mac-mpc/bounces.
+    /// Toggle master-output recording. Auto-names into ~/Music/Flipside/bounces.
     func toggleBounce() {
         if isBouncing {
             audio.stopOutputRecording()
@@ -293,7 +293,7 @@ final class AppState {
             }
         } else {
             let dir = FileManager.default.homeDirectoryForCurrentUser
-                .appendingPathComponent("Music/mac-mpc/bounces", isDirectory: true)
+                .appendingPathComponent("Music/Flipside/bounces", isDirectory: true)
             try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
             let stamp = ISO8601DateFormatter().string(from: Date())
                 .replacingOccurrences(of: ":", with: "-")
@@ -501,7 +501,7 @@ final class AppState {
 
     private func chopsTempDir() -> URL {
         let base = FileManager.default.temporaryDirectory
-            .appendingPathComponent("mac-mpc/chops/\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("Flipside/chops/\(UUID().uuidString)", isDirectory: true)
         try? FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
         return base
     }
@@ -818,7 +818,7 @@ final class AppState {
         }
     }
 
-    /// Map an incoming nanoKONTROL CC to a mac-mpc action.
+    /// Map an incoming nanoKONTROL CC to a Flipside action.
     /// Knobs/sliders are absolute (0…127) — used directly as normalised
     /// values (soft-takeover can come later). Transport buttons send 127
     /// on press, 0 on release; we act on press.

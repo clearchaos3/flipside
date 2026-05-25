@@ -2,10 +2,10 @@
 import PackageDescription
 
 let package = Package(
-    name: "mac-mpc",
+    name: "Flipside",
     platforms: [.macOS("15.0")],
     products: [
-        .executable(name: "mac-mpc", targets: ["App"]),
+        .executable(name: "flipside", targets: ["App"]),
         .library(name: "MMAudio", targets: ["MMAudio"]),
         .library(name: "MMMidi", targets: ["MMMidi"]),
         .library(name: "MMModels", targets: ["MMModels"]),

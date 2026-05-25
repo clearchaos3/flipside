@@ -130,7 +130,7 @@ struct TransportView: View {
                 .controlSize(.large)
                 .tint(state.isBouncing ? .red : nil)
                 .buttonStyle(.borderedProminent)
-                .help("Record the master output to a WAV in ~/Music/mac-mpc/bounces")
+                .help("Record the master output to a WAV in ~/Music/Flipside/bounces")
             }
         }
         .padding(.horizontal, 14)

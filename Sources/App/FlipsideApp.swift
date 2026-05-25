@@ -1,12 +1,12 @@
 import SwiftUI
 
 @main
-struct MacMPCApp: App {
+struct FlipsideApp: App {
 
     @State private var state = AppState()
 
     var body: some Scene {
-        WindowGroup("mac-mpc") {
+        WindowGroup("Flipside") {
             ContentView()
                 .environment(state)
                 .task { state.start() }

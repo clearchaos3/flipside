@@ -29,7 +29,7 @@ public final class SequencerEngine: @unchecked Sendable {
 
     private let audio: AudioEngine
     private let lock = NSLock()
-    private let timerQueue = DispatchQueue(label: "mac-mpc.sequencer", qos: .userInteractive)
+    private let timerQueue = DispatchQueue(label: "flipside.sequencer", qos: .userInteractive)
     private var timer: DispatchSourceTimer?
 
     // All access guarded by `lock`.

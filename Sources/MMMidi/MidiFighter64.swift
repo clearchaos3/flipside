@@ -17,7 +17,7 @@ public final class MidiFighter64: @unchecked Sendable {
 
     public struct Config: Sendable {
         public var deviceNameContains: String = "Midi Fighter 64"
-        public var clientName: String = "mac-mpc.mf64"
+        public var clientName: String = "flipside.mf64"
         public var inputPortName: String = "Input"
         public var outputPortName: String = "Output"
         public var pollIntervalSeconds: TimeInterval = 1.0

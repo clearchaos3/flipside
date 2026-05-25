@@ -17,7 +17,7 @@ enum NanoCC {
     static let stop:  UInt8 = 46
     static let rec:   UInt8 = 44
 
-    // mac-mpc role assignments.
+    // Flipside role assignments.
     static let k1 = knobCCs[0]          // 14 → K1
     static let k2 = knobCCs[1]          // 15 → K2
     static let k3 = knobCCs[2]          // 16 → K3

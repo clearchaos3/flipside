@@ -1,8 +1,9 @@
-# mac-mpc
+# Flipside
 
 A native macOS sampler / sequencer modeled on the classic 16-pad
 hardware-sampler workflow, driven by a **DJ TechTools Midi Fighter 64** +
-**Korg nanoKONTROL** (original).
+**Korg nanoKONTROL** (original). Built for chopping samples and flipping
+them into beats.
 
 The goal is a faithful recreation of that workflow: sample editing,
 16 sequences × 8 banks, Pad FX / Knob FX / Flex Beat, Chop mode, 16 Levels,
@@ -39,7 +40,7 @@ swift test
 # Bundled .app for normal launch (needed for AppKit/menu-bar features)
 ./make-app.sh             # debug build
 ./make-app.sh release     # optimized build
-open ./mac-mpc.app
+open ./Flipside.app
 ```
 
 ## Hardware

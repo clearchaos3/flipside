@@ -16,7 +16,7 @@ public struct PadCoord: Hashable, Sendable, Codable, CustomStringConvertible {
 }
 
 /// One of the four 4×4 quadrants of the MF64 grid.
-/// In `mac-mpc` these double as bank selectors — each quadrant maps to one
+/// In Flipside these double as bank selectors — each quadrant maps to one
 /// MPC bank, so four banks are visible at once with no bank-switch needed.
 public enum Quadrant: Int, CaseIterable, Sendable {
     case topLeft, topRight, bottomLeft, bottomRight

@@ -37,7 +37,7 @@ struct ContentView: View {
 
     private var header: some View {
         HStack {
-            Text("mac-mpc")
+            Text("Flipside")
                 .font(.system(size: 26, weight: .black, design: .rounded))
                 .foregroundStyle(.white)
             Spacer()
