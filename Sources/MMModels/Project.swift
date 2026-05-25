@@ -22,6 +22,9 @@ public struct Project: Hashable, Codable, Sendable {
     public var timeSigNumerator: Int = 4
     public var timeSigDenominator: Int = 4
 
+    /// Master-bus color compressor.
+    public var compressor = CompressorSettings()
+
     public init() {
         self.activeSequence = PadAddress(bank: .A, pad: PadIndex(0))
         for bank in BankIndex.allCases {

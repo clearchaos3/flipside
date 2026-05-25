@@ -52,6 +52,9 @@ final class AppState {
     var transport: SequencerEngine.Transport = .stopped
     var playheadTick: Int = 0
 
+    /// Master compressor sheet visibility.
+    var isCompressorOpen: Bool = false
+
     var lastEvent: String = "—"
 
     enum ConnectionStatus: Equatable {
@@ -187,6 +190,21 @@ final class AppState {
         isBrowserOpen = true
     }
 
+    // MARK: - Master compressor
+
+    /// Push the project's compressor settings to the engine.
+    func applyCompressor() {
+        audio.setCompressor(project.compressor)
+    }
+
+    var compressorBinding: CompressorSettings {
+        get { project.compressor }
+        set {
+            project.compressor = newValue
+            applyCompressor()
+        }
+    }
+
     // MARK: - Project save / load
 
     var currentProjectURL: URL?
@@ -252,6 +270,7 @@ final class AppState {
             selectedPad = PadAddress(bank: .A, pad: PadIndex(0))
             recomputeWaveform()
             refreshMF64LEDs()
+            applyCompressor()
             lastEvent = "Loaded \(project.name)"
         } catch {
             lastEvent = "Load failed: \(error.localizedDescription)"

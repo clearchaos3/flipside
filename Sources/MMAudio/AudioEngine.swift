@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import AudioToolbox
 import MMModels
 
 /// Per-trigger playback parameters pushed from the model layer. Kept inside
@@ -71,16 +72,31 @@ public final class AudioEngine: @unchecked Sendable {
     private var previewFormat: AVAudioFormat?
     private var previewBuffer: AVAudioPCMBuffer?
 
+    /// Master-bus compressor (Apple DynamicsProcessor). Inserted between the
+    /// master mixer and the main mixer; bypassed by default.
+    private let compressor: AVAudioUnitEffect = {
+        let desc = AudioComponentDescription(
+            componentType: kAudioUnitType_Effect,
+            componentSubType: kAudioUnitSubType_DynamicsProcessor,
+            componentManufacturer: kAudioUnitManufacturer_Apple,
+            componentFlags: 0, componentFlagsMask: 0)
+        return AVAudioUnitEffect(audioComponentDescription: desc)
+    }()
+
     private let lock = NSLock()
 
     public init() {
         engine.attach(masterMixer)
-        engine.connect(masterMixer, to: engine.mainMixerNode, format: nil)
+        engine.attach(compressor)
+        compressor.bypass = true
+        let fmt = engine.mainMixerNode.outputFormat(forBus: 0)
+        // masterMixer → compressor → mainMixerNode
+        engine.connect(masterMixer, to: compressor, format: fmt)
+        engine.connect(compressor, to: engine.mainMixerNode, format: fmt)
 
         engine.attach(previewPlayer)
-        let defaultFormat = engine.mainMixerNode.outputFormat(forBus: 0)
-        engine.connect(previewPlayer, to: masterMixer, format: defaultFormat)
-        previewFormat = defaultFormat
+        engine.connect(previewPlayer, to: masterMixer, format: fmt)
+        previewFormat = fmt
     }
 
     public func start() {
@@ -340,6 +356,24 @@ public final class AudioEngine: @unchecked Sendable {
     }
 
     public func stopPreview() { previewPlayer.stop() }
+
+    // MARK: - Master compressor
+
+    /// Configure the master-bus compressor. Bypassed unless `enabled`.
+    public func setCompressor(_ s: CompressorSettings) {
+        compressor.bypass = !s.enabled
+        guard s.enabled else { return }
+        let au = compressor.audioUnit
+        // Amount 0…1 → threshold 0 dB (no comp) … -40 dB (heavy).
+        let threshold = Float(-40.0 * max(0, min(1, s.amount)))
+        let attackSec = Float(max(0.0001, min(0.2, s.attackMs / 1000.0)))
+        let releaseSec = Float(max(0.01, min(3.0, s.releaseMs / 1000.0)))
+        let gain = Float(max(-40, min(40, s.inBoostDB)))
+        AudioUnitSetParameter(au, kDynamicsProcessorParam_Threshold, kAudioUnitScope_Global, 0, threshold, 0)
+        AudioUnitSetParameter(au, kDynamicsProcessorParam_AttackTime, kAudioUnitScope_Global, 0, attackSec, 0)
+        AudioUnitSetParameter(au, kDynamicsProcessorParam_ReleaseTime, kAudioUnitScope_Global, 0, releaseSec, 0)
+        AudioUnitSetParameter(au, kDynamicsProcessorParam_OverallGain, kAudioUnitScope_Global, 0, gain, 0)
+    }
 
     // MARK: - Private
 

@@ -21,6 +21,10 @@ struct ContentView: View {
             SampleBrowserView()
                 .environment(state)
         }
+        .sheet(isPresented: $state.isCompressorOpen) {
+            CompressorView()
+                .environment(state)
+        }
     }
 
     private var header: some View {
@@ -71,6 +75,14 @@ struct ContentView: View {
             .menuStyle(.borderlessButton)
             .fixedSize()
             .disabled(state.project.pads[state.selectedPad]?.sampleURL == nil)
+
+            Button {
+                state.isCompressorOpen = true
+            } label: {
+                Label("Comp", systemImage: "waveform.badge.minus")
+                    .font(.system(.body, design: .monospaced))
+            }
+            .controlSize(.large)
 
             Text(state.selectedPad.description)
                 .font(.system(.body, design: .monospaced, weight: .heavy))
