@@ -22,10 +22,15 @@ struct PadGridView: View {
                             address: address,
                             pressed: state.pressedCoords.contains(coord),
                             selected: state.selectedPad == address,
-                            loaded: state.project.pads[address]?.sampleURL != nil
+                            loaded: state.project.pads[address]?.sampleURL != nil,
+                            shiftLabel: state.shiftActive ? AppState.shiftLabels[address.pad.raw] : nil
                         )
                         .onTapGesture {
-                            state.selectAndTrigger(address)
+                            if state.shiftActive {
+                                state.handleShiftPad(address.pad.raw)
+                            } else {
+                                state.selectAndTrigger(address)
+                            }
                         }
                     }
                 }
@@ -42,11 +47,13 @@ private struct PadCell: View {
     let pressed: Bool
     let selected: Bool
     let loaded: Bool
+    var shiftLabel: String? = nil
 
     var body: some View {
         let bankColor = Self.color(for: address.bank.rawValue)
         let fillColor: Color = {
             if pressed { return .white }
+            if shiftLabel != nil { return Color.indigo.opacity(0.30) }
             if loaded { return bankColor.opacity(0.55) }
             return bankColor.opacity(0.22)
         }()
@@ -60,13 +67,21 @@ private struct PadCell: View {
                                 lineWidth: selected ? 2.5 : 1)
                 )
 
-            VStack(spacing: 2) {
-                Text(address.bank.description)
-                    .font(.system(size: 10, weight: .heavy, design: .monospaced))
-                    .foregroundStyle((pressed ? Color.black : Color.white).opacity(0.7))
-                Text("\(address.pad.label)")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundStyle((pressed ? Color.black : Color.white).opacity(0.85))
+            if let shiftLabel {
+                Text(shiftLabel)
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.white)
+                    .padding(2)
+            } else {
+                VStack(spacing: 2) {
+                    Text(address.bank.description)
+                        .font(.system(size: 10, weight: .heavy, design: .monospaced))
+                        .foregroundStyle((pressed ? Color.black : Color.white).opacity(0.7))
+                    Text("\(address.pad.label)")
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundStyle((pressed ? Color.black : Color.white).opacity(0.85))
+                }
             }
         }
         .frame(width: 64, height: 64)

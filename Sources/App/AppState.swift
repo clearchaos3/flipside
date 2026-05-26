@@ -348,6 +348,50 @@ final class AppState {
         refreshMF64LEDs()
     }
 
+    // MARK: - SHIFT layer (secondary pad functions)
+
+    /// When active, the pad grid shows the 16 secondary functions and a pad
+    /// press invokes that function instead of triggering a sample.
+    var shiftActive: Bool = false
+    /// Full Level: all triggers play at full velocity.
+    var fullLevel: Bool = false { didSet { audio.setFullLevel(fullLevel) } }
+    /// Record Quantize: snap recorded hits to the grid.
+    var recQuantize: Bool = true {
+        didSet { sequencer.setQuantize(division: activeSequenceQuantize, enabled: recQuantize) }
+    }
+
+    /// Labels for the SHIFT secondary functions, pad index 0…15 (label N+1).
+    static let shiftLabels: [String] = [
+        "Full Level", "Half Seq", "Double Seq", "Count-In",
+        "Compressor", "Half Speed", "Double Speed", "MIDI Cfg",
+        "Fader", "Rec Quant", "Resample", "Song",
+        "Trim", "Time Corr", "Warp", "Project",
+    ]
+
+    /// Invoke the SHIFT secondary function for a pad index (0…15).
+    func handleShiftPad(_ index: Int) {
+        let active = project.activeSequence
+        switch index {
+        case 0:  fullLevel.toggle(); lastEvent = "Full Level \(fullLevel ? "ON" : "OFF")"
+        case 1:  project.sequences[active]?.halveLength(numerator: project.timeSigNumerator, denominator: project.timeSigDenominator); lastEvent = "Half Seq"
+        case 2:  project.sequences[active]?.doubleLength(numerator: project.timeSigNumerator, denominator: project.timeSigDenominator); lastEvent = "Double Seq"
+        case 3:  countIn.toggle(); lastEvent = "Count-In \(countIn ? "ON" : "OFF")"
+        case 4:  isCompressorOpen = true
+        case 5:  project.sequences[active]?.halfSpeed(numerator: project.timeSigNumerator, denominator: project.timeSigDenominator); lastEvent = "Half Speed"
+        case 6:  project.sequences[active]?.doubleSpeed(numerator: project.timeSigNumerator, denominator: project.timeSigDenominator); lastEvent = "Double Speed"
+        case 7:  lastEvent = "MIDI Config — not yet implemented"
+        case 8:  lastEvent = "Fader assign — fader = pad volume"
+        case 9:  recQuantize.toggle(); lastEvent = "Rec Quantize \(recQuantize ? "ON" : "OFF")"
+        case 10: lastEvent = "Resample — not yet implemented"
+        case 11: isSongOpen = true
+        case 12: commitTrim()
+        case 13: lastEvent = "Time Correct — use the Q control in transport"
+        case 14: lastEvent = "Warp — not yet implemented"
+        case 15: saveProject()
+        default: break
+        }
+    }
+
     func openBrowser() {
         browser.refresh()
         isBrowserOpen = true

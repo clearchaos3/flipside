@@ -34,4 +34,43 @@ public struct MMSequence: Hashable, Codable, Sendable {
     public init() {}
 
     public var isEmpty: Bool { events.isEmpty }
+
+    private func barTicks(_ numerator: Int, _ denominator: Int) -> Int {
+        numerator * (Timing.ticksPerQuarter * 4 / max(1, denominator))
+    }
+
+    /// Cut the sequence length in half, dropping events past the new end.
+    public mutating func halveLength(numerator: Int = 4, denominator: Int = 4) {
+        let newBars = max(1, bars / 2)
+        let limit = newBars * barTicks(numerator, denominator)
+        bars = newBars
+        events = events.filter { $0.tick < limit }
+    }
+
+    /// Double the length, duplicating all events into the new second half.
+    public mutating func doubleLength(numerator: Int = 4, denominator: Int = 4) {
+        let oldLen = bars * barTicks(numerator, denominator)
+        let newBars = min(128, bars * 2)
+        guard newBars > bars else { return }
+        let copies = events.map { e -> SequenceEvent in
+            var c = e; c.tick += oldLen; return c
+        }
+        events.append(contentsOf: copies)
+        bars = newBars
+    }
+
+    /// Half speed: events spread out to take twice the space (ticks ×2),
+    /// so the sequence grows to keep them in bounds.
+    public mutating func halfSpeed(numerator: Int = 4, denominator: Int = 4) {
+        events = events.map { e in var c = e; c.tick *= 2; c.lengthTicks *= 2; return c }
+        bars = min(128, bars * 2)
+    }
+
+    /// Double speed: events compress to half the space (ticks ÷2).
+    public mutating func doubleSpeed(numerator: Int = 4, denominator: Int = 4) {
+        events = events.map { e in
+            var c = e; c.tick /= 2; c.lengthTicks = max(1, c.lengthTicks / 2); return c
+        }
+        bars = max(1, bars / 2)
+    }
 }

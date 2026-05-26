@@ -89,6 +89,8 @@ public final class AudioEngine: @unchecked Sendable {
     /// When false, triggerPad no-ops — used to suppress sample playback while
     /// Pad FX mode repurposes the pads as effect triggers.
     private var playbackEnabled = true
+    /// When true, every trigger plays at full velocity regardless of input.
+    private var fullLevel = false
 
     private let previewPlayer = AVAudioPlayerNode()
     private var previewFormat: AVAudioFormat?
@@ -402,6 +404,11 @@ public final class AudioEngine: @unchecked Sendable {
         lock.lock(); playbackEnabled = enabled; lock.unlock()
     }
 
+    /// Full Level: force every trigger to full velocity.
+    public func setFullLevel(_ on: Bool) {
+        lock.lock(); fullLevel = on; lock.unlock()
+    }
+
     /// Trigger a pad. Safe from any thread (including the CoreMIDI thread).
     ///
     /// Playback mode follows the pad's params:
@@ -451,11 +458,12 @@ public final class AudioEngine: @unchecked Sendable {
                 }
             }
         }
+        let forceFull = fullLevel
         lock.unlock()
 
         for node in chokeTargets { node.stop() }
 
-        let vel = max(0, min(1, Float(velocity) / 127.0))
+        let vel = forceFull ? 1.0 : max(0, min(1, Float(velocity) / 127.0))
         voice.volume = params.gain * vel
         voice.pan = max(-1, min(1, params.pan))
         let options: AVAudioPlayerNodeBufferOptions = params.loop ? [.interrupts, .loops] : [.interrupts]

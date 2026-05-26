@@ -185,6 +185,18 @@ struct ContentView: View {
             }
             .controlSize(.large)
 
+            Button {
+                state.shiftActive.toggle()
+            } label: {
+                Label("SHIFT", systemImage: "shift")
+                    .font(.system(.body, design: .monospaced, weight: .bold))
+                    .foregroundStyle(state.shiftActive ? Color.black : Color.white)
+            }
+            .controlSize(.large)
+            .tint(state.shiftActive ? .indigo : nil)
+            .buttonStyle(.borderedProminent)
+            .help("Show secondary pad functions")
+
             Text(state.selectedPad.description)
                 .font(.system(.body, design: .monospaced, weight: .heavy))
                 .foregroundStyle(.yellow)
