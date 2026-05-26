@@ -51,6 +51,14 @@ public final class MidiFighter64: @unchecked Sendable {
     private let onEvent: EventHandler
     private let onFastTrigger: FastTriggerHandler?
 
+    /// The MIDI channel pads actually arrive on (Bank 1 = ch3 / index 2,
+    /// Bank 2 = ch2 / index 1). LED control must echo this channel, so we
+    /// learn it from incoming Note-Ons and repaint if it changes.
+    private var observedChannel: UInt8
+    /// Last full grid of colors sent, so we can repaint when the channel is
+    /// (re)detected.
+    private var lastColors: [PadColor]?
+
     public init(
         config: Config = Config(),
         onEvent: @escaping EventHandler,
@@ -59,6 +67,7 @@ public final class MidiFighter64: @unchecked Sendable {
         self.config = config
         self.onEvent = onEvent
         self.onFastTrigger = onFastTrigger
+        self.observedChannel = config.ledChannel
     }
 
     deinit {
@@ -151,6 +160,7 @@ public final class MidiFighter64: @unchecked Sendable {
             switch type {
             case 0x90:
                 guard i + 2 < bytes.count else { i = bytes.count; continue }
+                noteChannelObserved(status & 0x0F)
                 let note = bytes[i + 1]
                 let velocity = bytes[i + 2]
                 if velocity == 0 { handleNoteOff(note: note) }
@@ -182,6 +192,17 @@ public final class MidiFighter64: @unchecked Sendable {
         }
     }
 
+    /// Learn which channel the device sends on; if it differs from what we're
+    /// driving LEDs on, switch and repaint so LED control isn't ignored.
+    private func noteChannelObserved(_ channel: UInt8) {
+        guard channel != observedChannel else { return }
+        observedChannel = channel
+        if let colors = lastColors, colors.count == 64 {
+            var i = 0
+            setAllPadColors { _ in defer { i += 1 }; return colors[i] }
+        }
+    }
+
     private func emit(_ event: Event) {
         let handler = onEvent
         DispatchQueue.main.async { handler(event) }
@@ -200,23 +221,27 @@ public final class MidiFighter64: @unchecked Sendable {
     public func setPadColor(pad: PadCoord, color: PadColor) {
         guard connected else { return }
         let note = MFNoteMap.note(for: pad)
-        let status: UInt8 = 0x90 | (config.ledChannel & 0x0F)
+        let status: UInt8 = 0x90 | (observedChannel & 0x0F)
         sendMIDIBytes([status, note, ledVelocity(color.paletteIndex)], port: outputPort, destination: destination)
     }
 
     public func setAllPadColors(_ colorFor: (PadCoord) -> PadColor) {
         guard connected else { return }
-        let status: UInt8 = 0x90 | (config.ledChannel & 0x0F)
+        let status: UInt8 = 0x90 | (observedChannel & 0x0F)
         var bytes: [UInt8] = []
         bytes.reserveCapacity(64 * 3)
+        var cache = [PadColor](repeating: .off, count: 64)
         for row in 0..<8 {
             for col in 0..<8 {
                 let pad = PadCoord(row: row, col: col)
+                let color = colorFor(pad)
+                cache[row * 8 + col] = color
                 bytes.append(status)
                 bytes.append(MFNoteMap.note(for: pad))
-                bytes.append(ledVelocity(colorFor(pad).paletteIndex))
+                bytes.append(ledVelocity(color.paletteIndex))
             }
         }
+        lastColors = cache
         sendMIDIBytes(bytes, port: outputPort, destination: destination)
     }
 

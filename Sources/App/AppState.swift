@@ -945,9 +945,9 @@ final class AppState {
     func ledColor(for addr: PadAddress) -> PadColor {
         if litPads.contains(addr) { return .white }
         let pad = project.pads[addr]
-        if pad?.muted == true { return PadColor(paletteIndex: 6) }  // dim red
-        if pad?.sampleURL != nil { return Self.bankColor(addr.bank) }
-        return .off
+        if pad?.muted == true { return PadColor(paletteIndex: 2) }  // grey = muted
+        // 4-quadrant bank tint: dim when empty, bright when a sample is loaded.
+        return Self.bankColor(addr.bank, loaded: pad?.sampleURL != nil)
     }
 
     /// Repaint every MF64 pad LED from `ledColor`.
@@ -976,17 +976,22 @@ final class AppState {
         }
     }
 
-    private static func bankColor(_ bank: BankIndex) -> PadColor {
+    /// Per-bank quadrant color. `loaded` → the pure/bright palette slot;
+    /// otherwise the medium-dim variant (same hue, ~half brightness) so empty
+    /// pads still read as their quadrant color but clearly dimmer.
+    private static func bankColor(_ bank: BankIndex, loaded: Bool) -> PadColor {
+        let bright: UInt8
         switch bank {
-        case .A: return .red
-        case .B: return .orange
-        case .C: return .yellow
-        case .D: return .green
-        case .E: return .mint
-        case .F: return .cyan
-        case .G: return .blue
-        case .H: return .violet
+        case .A: bright = 5    // red
+        case .B: bright = 9    // orange
+        case .C: bright = 13   // yellow
+        case .D: bright = 21   // green
+        case .E: bright = 25   // mint
+        case .F: bright = 37   // cyan
+        case .G: bright = 45   // blue
+        case .H: bright = 49   // violet
         }
+        return PadColor(paletteIndex: loaded ? bright : bright + 1)
     }
 
     private func handleMF(_ event: MidiFighter64.Event) {
