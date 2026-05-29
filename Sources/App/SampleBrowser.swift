@@ -65,17 +65,21 @@ final class SampleBrowser {
         refresh()
     }
 
-    /// Quick-jump locations shown in the browser header. Splice appears only
-    /// if `~/Splice` exists.
+    /// Quick-jump locations shown in the browser header. Each appears only if
+    /// the folder exists.
     var quickLocations: [(name: String, url: URL)] {
         let home = FileManager.default.homeDirectoryForCurrentUser
-        var locs: [(String, URL)] = [
-            ("Home", home),
-            ("Music", home.appendingPathComponent("Music", isDirectory: true)),
+        var locs: [(String, URL)] = [("Home", home)]
+        let candidates: [(String, String)] = [
+            ("Downloads", "Downloads"),
+            ("Desktop", "Desktop"),
+            ("Music", "Music"),
+            ("Documents", "Documents"),
+            ("Splice", "Splice"),
         ]
-        let splice = home.appendingPathComponent("Splice", isDirectory: true)
-        if FileManager.default.fileExists(atPath: splice.path) {
-            locs.append(("Splice", splice))
+        for (name, sub) in candidates {
+            let url = home.appendingPathComponent(sub, isDirectory: true)
+            if FileManager.default.fileExists(atPath: url.path) { locs.append((name, url)) }
         }
         return locs
     }
@@ -139,11 +143,27 @@ final class SampleBrowser {
         return entries[highlightedIndex]
     }
 
+    /// Auto-stops a preview after this long so a full song doesn't drone on.
+    private static let previewCapSeconds: Double = 15
+    private var previewTask: Task<Void, Never>?
+
+    func stopPreview() {
+        previewTask?.cancel()
+        previewTask = nil
+        audio?.stopPreview()
+    }
+
     private func autoPreview() {
+        previewTask?.cancel()
         guard previewOnHighlight,
               let e = highlightedEntry,
               e.kind == .file
         else { return }
         audio?.preview(url: e.url)
+        previewTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(Self.previewCapSeconds))
+            guard !Task.isCancelled else { return }
+            self?.audio?.stopPreview()
+        }
     }
 }

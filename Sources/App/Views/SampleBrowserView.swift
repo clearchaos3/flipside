@@ -21,6 +21,7 @@ struct SampleBrowserView: View {
         }
         .focusable()
         .onAppear { browser.refresh() }
+        .onDisappear { browser.stopPreview() }
     }
 
     private func header(browser: SampleBrowser) -> some View {
@@ -35,9 +36,16 @@ struct SampleBrowserView: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer()
+            Button {
+                browser.stopPreview()
+            } label: {
+                Image(systemName: "stop.fill")
+            }
+            .controlSize(.small)
+            .help("Stop preview")
             Toggle(isOn: Binding(
                 get: { browser.previewOnHighlight },
-                set: { browser.previewOnHighlight = $0 })
+                set: { browser.previewOnHighlight = $0; if !$0 { browser.stopPreview() } })
             ) {
                 Text("Preview")
                     .font(.system(.caption, design: .monospaced))
@@ -73,10 +81,20 @@ struct SampleBrowserView: View {
                             .id(idx)
                             .contentShape(.rect)
                             .onTapGesture(count: 2) {
-                                _ = loadOrEnter(entry: entry, browser: browser)
+                                // Double-click a file = load it.
+                                if entry.kind == .file {
+                                    state.loadHighlightedToSelectedPad()
+                                    dismiss()
+                                }
                             }
                             .onTapGesture {
-                                browser.highlightedIndex = idx
+                                // Single click: folders open immediately; files
+                                // highlight + preview.
+                                if entry.kind == .file {
+                                    browser.highlightedIndex = idx
+                                } else {
+                                    _ = browser.activate(entry)
+                                }
                             }
                     }
                 }
